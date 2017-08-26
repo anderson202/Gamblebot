@@ -1,13 +1,15 @@
 import random
+from gambleplayer import Player
 
 class GambleGame:
 
     def __init__(self):
-        self.players = {}
         self.running = False
         self.winning_player = None
         self.winning_score = 0
-        self.current_players = []
+        # current players in live game with their bet amount
+        self.current_players = {}
+        self.players = {}
 
     def start(self):
         if self.running:
@@ -17,21 +19,24 @@ class GambleGame:
         self.running = True
         return ""
 
-    def add_player(self, username):
-        if username in self.current_players:
-            return username + " is already in the game"
-        self.players[username] = 0
-        self.current_players.append(username)
-        return username + " has joined the game"
+    def add_player(self, player):
+        if player.name in self.current_players.keys():
+            return player.name + " is already in the game"
+        self.players[player.name] = player
+        self.current_players[player.name] = 0
+        return player.name + " has joined the game"
 
     def list_players(self):
-        return self.current_players
+        return self.current_players.keys()
 
     def list_score(self):
         response = ""
         for player, score in self.players.items():
             response += player + ": " + str(score) + ","
         return response.strip(",")
+
+    def list_winning(self, player):
+        return str(player.amount)
 
     def roll(self):
         return random.randint(1, 100)
@@ -45,7 +50,7 @@ class GambleGame:
         self.players[self.winning_player] += 1
         self.winning_score = 0
         self.winning_player = None
-        self.current_players = []
+        self.current_players = {}
         self.running = False
 
 

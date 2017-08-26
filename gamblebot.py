@@ -6,7 +6,6 @@ from gamblegame import GambleGame
 
 class GambleBot:
 
-
     def __init__(self, token, id):
         API_TOKEN = token
         BOT_ID = id
@@ -40,7 +39,7 @@ class GambleBot:
                         self.post(response, channel)
                         self.get_user_input(player)
 
-                        random_int = random.randint(1, 100)
+                        random_int = player.roll()
                         self.game.update_winner(player, random_int)
                         response = "You rolled " + str(random_int)
                         self.post(response, channel)
@@ -55,10 +54,15 @@ class GambleBot:
                 response = self.game.list_score()
 
             elif gamble_command == "help":
-                response = "join - join existing game\nstart - start game\nlist - list current players\nscore - list all stored players and their score"
+                response = "join - join existing game\n" \
+                           "start - start game\n" \
+                           "list - list current players\n" \
+                           "score - list all stored players and their score\n"
+
+            elif gamble_command == "winnings":
+                response = self.game.list_winning(username)
         else:
             response="Use 'join' to join the game"
-
 
         self.post(response, channel)
 
@@ -82,7 +86,6 @@ class GambleBot:
                     self.handle_command(username, command, channel)
         else:
             print("Connection failed.")
-
 
 
 if __name__ == "__main__":
