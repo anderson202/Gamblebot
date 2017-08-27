@@ -10,7 +10,7 @@ class Player:
         return random.randint(1, 100)
 
     def bet(self, bet_amount):
-        if bet_amount < self.amount:
+        if bet_amount > self.amount:
             return "Not enough money"
         else:
             self.amount -= bet_amount

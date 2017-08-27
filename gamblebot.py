@@ -23,6 +23,39 @@ class GambleBot:
                 if username != None and username == player and command.split()[1] == "roll":
                     return
 
+    def get_bet_amount(self):
+        betted_users = []
+        timeout = time.time() + 30   # 5 minutes from now
+        while True:
+            if len(betted_users) == len(self.game.current_players) or time.time() > timeout:
+                break
+            username, command, channel = self.parse_slack_output(self.slack_client.rtm_read())
+            if(command and channel):
+                command_split = command.split()
+                if username != None and len(command_split) == 3 and command_split[1] == "bet":
+                    if (username in betted_users):
+                        response = username + " has already placed a bet"
+                    else:
+                        try:
+                            bet = self.game.players[username].bet(int(command_split[2]))
+                            if type(bet) is str:
+                                response = username + " you do not have enough money to place that bet"
+                            else:
+                                self.game.current_players[username] = bet
+                                betted_users.append(username)
+                                response = username + " placed a bet of " + str(command_split[2])
+                        except:
+                            response = "bet amount is not correct"
+
+                    self.post(response, channel)
+        self.post("Betting is now complete. Users who did not bet will be removed from current game", channel)
+        time.sleep(1)
+        '''for user in self.game.current_players.keys():
+            if user not in betted_users:
+                self.game.current_players.pop(user)'''
+
+        return sum(bet for bet in self.game.current_players.values()) #return sum of all bets
+
     def handle_command(self, username, command, channel):
         print(command)
         response = ""
@@ -34,18 +67,20 @@ class GambleBot:
             elif gamble_command == "start":
                 response = self.game.start()
                 if response == "":
-                    for player in self.game.players.keys():
-                        response = player + "'s turn to roll"
+                    self.post("30 seconds to bet, type 'bet <amount> to place bet", channel)
+                    total_pot = self.get_bet_amount()
+                    for player_name in self.game.players.keys():
+                        response = player_name + "'s turn to roll"
                         self.post(response, channel)
-                        self.get_user_input(player)
+                        self.get_user_input(player_name)
 
-                        random_int = player.roll()
-                        self.game.update_winner(player, random_int)
+                        random_int = self.game.players[player_name].roll()
+                        self.game.update_winner(player_name, random_int)
                         response = "You rolled " + str(random_int)
                         self.post(response, channel)
                         time.sleep(1)
-                    response = "Winner of this round is " + self.game.winning_player
-                    self.game.end()
+                    response = "Winner of this round is " + self.game.winning_player_name
+                    self.game.end(total_pot)
 
             elif gamble_command == "list":
                 response = self.game.list_players()
