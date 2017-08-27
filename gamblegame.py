@@ -46,6 +46,12 @@ class GambleGame:
             self.winning_score = score
             self.winning_player_name = name
 
+    def help(self):
+        return "join - join existing game\n" \
+               "start - start game\n" \
+               "list - list current players\n" \
+               "score - list all stored players and their score\n"
+
     def end(self, winnings):
         self.players[self.winning_player_name].amount += winnings
         self.winning_score = 0
