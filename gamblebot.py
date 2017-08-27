@@ -1,14 +1,14 @@
 import sys
 import time
-import random
+from os import environ
 from slackclient import SlackClient
 from gamblegame import GambleGame
 
 class GambleBot:
 
-    def __init__(self, token, id):
-        API_TOKEN = token
-        BOT_ID = id
+    def __init__(self):
+        API_TOKEN = environ.get('api_key')
+        BOT_ID = environ.get('bot_id')
         self.AT_BOT = "<@" + BOT_ID + ">"
         self.game = GambleGame()
         self.slack_client = SlackClient(API_TOKEN)
@@ -124,9 +124,7 @@ class GambleBot:
 
 
 if __name__ == "__main__":
-    token = sys.argv[1]
-    id = sys.argv[2]
-    bot = GambleBot(token, id)
+    bot = GambleBot()
     bot.listen()
 
 
