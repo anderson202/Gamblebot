@@ -6,12 +6,10 @@ from gamblegame import GambleGame
 
 class GambleBot:
 
-    def __init__(self):
-        API_TOKEN = environ.get('api_key')
-        BOT_ID = environ.get('bot_id')
-        self.AT_BOT = "<@" + BOT_ID + ">"
+    def __init__(self, api_token=environ.get('api_key'), bot_id=environ.get('bot_id')):
+        self.AT_BOT = "<@" + bot_id + ">"
         self.game = GambleGame()
-        self.slack_client = SlackClient(API_TOKEN)
+        self.slack_client = SlackClient(api_token)
 
     def post(self, response, channel):
         self.slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
@@ -124,7 +122,7 @@ class GambleBot:
 
 
 if __name__ == "__main__":
-    bot = GambleBot()
+    bot = GambleBot('xoxb-225678114055-iI0n2Z3NWP5a4LIZhS6V8Zdq', 'U6MKY3C1M')
     bot.listen()
 
 
