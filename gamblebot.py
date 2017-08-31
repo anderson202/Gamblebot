@@ -122,7 +122,7 @@ class GambleBot:
 
 
 if __name__ == "__main__":
-    bot = GambleBot('xoxb-225678114055-iI0n2Z3NWP5a4LIZhS6V8Zdq', 'U6MKY3C1M')
+    bot = GambleBot()
     bot.listen()
 
 
