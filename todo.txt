@@ -1,6 +1,8 @@
 1. Refactor/Update design
-2. Additional features?
-Bank feature
-Give Money to other player
-States instead of logic in controller?
-Make gamblebot.py more modular
+    - Figure out how to add a timeout to rolling and betting phases
+    - Figure out how to end the game
+2. Additional Features    
+    - Bank feature
+    - Give Money to other player
+    - States instead of logic in controller?
+    - Make gamblebot.py more modular
