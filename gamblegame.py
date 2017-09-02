@@ -13,7 +13,7 @@ class GambleGame:
 
     def start(self):
         if self.running:
-            return "Game is already running"
+            return "game is already running"
         self.running = True
         return ""
 
@@ -26,7 +26,10 @@ class GambleGame:
             self.players[name] = new_player
         self.current_players[name] = 0
         return name + " has joined the game"
-
+    
+    def remove_player(self, name):
+        self.current_players.pop(name, None)
+    
     def list_players(self):
         return list(self.current_players.keys())
 
