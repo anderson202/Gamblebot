@@ -1,2 +1,6 @@
 1. Refactor/Update design
 2. Additional features?
+Bank feature
+Give Money to other player
+States instead of logic in controller?
+Make gamblebot.py more modular
