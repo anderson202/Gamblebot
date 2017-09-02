@@ -14,8 +14,6 @@ class GambleGame:
     def start(self):
         if self.running:
             return "Game is already running"
-        elif len(self.current_players) < 1:
-            return "Need more players"
         self.running = True
         return ""
 
@@ -47,8 +45,7 @@ class GambleGame:
             self.winning_player_name = name
 
     def help(self):
-        return "join - join existing game\n" \
-               "start - start game\n" \
+        return  "start - start game\n" \
                "list - list current players\n" \
                "score - list all stored players and their score\n"
 
