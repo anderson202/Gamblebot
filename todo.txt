@@ -1,8 +1,11 @@
 1. Refactor/Update design
-    - Figure out how to add a timeout to rolling and betting phases
-    - Figure out how to end the game
+    - continue working with process/threading
+        - trigger rolling event after betting
+    - set channel as an object member
 2. Additional Features    
     - Bank feature
     - Give Money to other player
     - States instead of logic in controller?
     - Make gamblebot.py more modular
+3. Add reset feature for voided games
+    - if nobody rolls, return bets to everyone

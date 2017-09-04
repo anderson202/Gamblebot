@@ -49,12 +49,6 @@ class GambleGame:
     def list_winning(self, player):
         return str(player.amount)
 
-    def start_rolling(self):
-        self.total_bets = sum(bet for bet in self.current_players.values())
-        self.state = GameState.ROLLING
-        t = Timer(30, self.end())
-        t.start()
-
     def update_winner(self, name, score):
         if score > self.winning_score:
             self.winning_score = score
@@ -64,21 +58,23 @@ class GambleGame:
         if self.current_players.get(name) == None:
             return name + " is not in the current game"
         elif self.current_players.get(name) != 0:
-            return name + " has already rolled"
-        self.current_players[name] = self.players[name].roll()
-        self.update_winner(name, self.current_players[name])
+            random_roll = self.players[name].roll()
+            self.update_winner(name, random_roll)
+            return random_roll
 
     def help(self):
         return  "start - start game\n" \
                "list - list current players\n" \
                "score - list all stored players and their score\n"
 
+    def reset(self):
+        return None
+
     def end(self):
-        '''self.players[self.winning_player_name].amount += self.total_bets
+        self.players[self.winning_player_name].amount += sum(bet for bet in self.current_players.values())
         self.winning_score = 0
         self.winning_player_name = None
         self.current_players = {}
-        self.running = False'''
-        print("END")
+        self.running = False
 
 

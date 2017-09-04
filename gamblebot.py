@@ -1,5 +1,6 @@
 import sys
 import time
+import multiprocessing
 from threading import Timer
 from os import environ
 from slackclient import SlackClient
@@ -12,6 +13,39 @@ class GambleBot:
         self.AT_BOT = "<@" + bot_id + ">"
         self.game = GambleGame()
         self.slack_client = SlackClient(api_token)
+        self.channel = None
+        self.timeout = 5
+        self.handler_process = []
+
+    # counts down a specified duration and then changes state of the game
+    def count_down(self, start_time, duration, next_state):
+        while(True):
+            current_count = time.time() - start_time
+            if duration < current_count:
+                self.game.state = next_state
+                break
+
+
+
+    def handle_betting(self, username, bet_amount, channel):
+        self.post(username + " has started a game. Amount to join is $" + str(bet_amount) +
+                                  ".\n 30 seconds to bet, type 'bet' to place bet", channel)
+        p = multiprocessing.Process(target=self.count_down, args=(time.time(), self.timeout, GameState.ROLLING))
+        p.start()
+
+    def handle_rolling(self, channel):
+        self.post("30 seconds to roll!", channel)
+        p = multiprocessing.Process(target=self.count_down, args=(time.time(), self.timeout, GameState.IDLE))
+        p.start()
+
+    def handle_end(self, channel):
+        if self.game.winning_player_name != None:
+            response = self.game.winning_player_name + " won with highest roll of " + self.game.winning_score
+        else:
+            response = "Game is voided"
+        self.post(response, channel)
+        self.game.end()
+
 
     def post(self, response, channel):
         self.slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
@@ -28,7 +62,6 @@ class GambleBot:
                     return self.game.players[player].roll()
 
     def handle_command(self, username, msg, channel):
-        print(msg)
         response = ""
         if len(msg.split()) > 1:
             gamble_command = msg.split()[1]
@@ -39,10 +72,9 @@ class GambleBot:
                     bet_amount = int(msg.split()[2])
                     response = self.game.start(bet_amount)
                     if response == "":
-                        self.post(username + " has started a game. Amount to join is $" + str(bet_amount) +
-                                  ".\n 30 seconds to bet, type 'bet' to place bet", channel)
-                        t = Timer(30, self.game.start_rolling())
-                        t.start()
+                        self.handle_betting(username, bet_amount, channel)
+                        self.channel = channel
+
 
             elif gamble_command == "bet" and self.game.state == GameState.BETTING:
                 try:
@@ -59,6 +91,9 @@ class GambleBot:
 
             elif gamble_command == "roll" and self.game.state == GameState.ROLLING:
                 response = self.game.roll(username)
+                if type(response) == int:
+                    response = username + " rolled " + str(response)
+
 
             elif gamble_command == "list":
                 response = self.game.list_players()
@@ -90,6 +125,11 @@ class GambleBot:
         if self.slack_client.rtm_connect():
             print("Bot connected and running!")
             while True:
+                # check whether the game is in rolling state, then spawn a thread to collect rolls
+                if self.game.state == GameState.ROLLING:
+                    self.handle_rolling(self.channel)
+                elif self.game.state == GameState.IDLE and self.game.running:
+                    self.handle_end(self.channel)
                 username, msg, channel = self.parse_slack_output(self.slack_client.rtm_read())
                 if msg and channel:
                     self.handle_command(username, msg, channel)
