@@ -1,11 +1,10 @@
 1. Refactor/Update design
-    - continue working with process/threading
-        - trigger rolling event after betting
-    - set channel as an object member
-2. Additional Features    
+    - make sure all logic follow same structure (MVC)
+        - ie either put all response logic in game model or in controller
+2. Additional Features
+    - Raise bet feature
     - Bank feature
     - Give Money to other player
     - States instead of logic in controller?
     - Make gamblebot.py more modular
-3. Add reset feature for voided games
-    - if nobody rolls, return bets to everyone
+

@@ -9,11 +9,15 @@ class GambleGame:
     def __init__(self):
         self.running = False
         self.winning_player_name = None
+        # current highest roll
         self.winning_score = 0
         # current players in live game with their bet amount
         self.current_players = {}
+        # player name to player object mapping
         self.players = {}
+        # game state used during betting/rolling phases
         self.state = GameState.IDLE
+        # bet amount for current game
         self.bet_amount = None
 
     def start(self, amount):
@@ -46,8 +50,11 @@ class GambleGame:
             response += player.name + ": " + str(player.amount) + ","
         return response.strip(",")
 
-    def list_winning(self, player):
-        return str(player.amount)
+    def list_winning(self, username):
+        if self.players.get(username) != None:
+            return str(self.players[username].amount)
+        else:
+            return "You are not a registered player"
 
     def update_winner(self, name, score):
         if score > self.winning_score:
@@ -65,16 +72,25 @@ class GambleGame:
     def help(self):
         return  "start - start game\n" \
                "list - list current players\n" \
-               "score - list all stored players and their score\n"
+               "score - list all stored players and their score\n" \
+               "winnings - list personal score"
 
     def reset(self):
-        return None
+        for player_name, bet_amount in self.current_players.items():
+            self.players[player_name].amount += bet_amount
 
     def end(self):
-        self.players[self.winning_player_name].amount += sum(bet for bet in self.current_players.values())
+        if self.winning_player_name != None:
+            pot = sum(bet for bet in self.current_players.values())
+            response = self.winning_player_name + " won $" + str(pot) + " with highest roll of " + str(self.winning_score)
+            self.players[self.winning_player_name].amount += pot
+        else:
+            response = "No rolls, game is voided and bets returned"
+            self.reset()
         self.winning_score = 0
         self.winning_player_name = None
         self.current_players = {}
         self.running = False
+        return response
 
 
