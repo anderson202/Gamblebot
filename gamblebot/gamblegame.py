@@ -19,14 +19,30 @@ class GambleGame:
         self.state = GameState.IDLE
         # bet amount for current game
         self.bet_amount = None
+        self.number_of_rolls = 0
 
-    def start(self, amount):
+    def start(self, amount, username):
         if self.running:
             return "game is already running"
         self.running = True
         self.bet_amount = amount
         self.state = GameState.BETTING
+        self.place_bet(username)
+
         return ""
+
+    def place_bet(self, username):
+        if self.current_players.get(username) != None:
+            return username + " already placed a bet"
+        if self.players.get(username) == None:
+            self.add_player(username)
+        bet = self.players[username].bet(self.bet_amount)
+        if type(bet) is str:
+            self.remove_player(username)
+            return username + " you do not have enough money to place that bet"
+        else:
+            self.current_players[username] = bet
+            return username + " placed a bet of $" + str(self.bet_amount)
 
     def add_player(self, name):
         if name in self.current_players.keys():
@@ -67,13 +83,15 @@ class GambleGame:
         elif self.current_players.get(name) != 0:
             random_roll = self.players[name].roll()
             self.update_winner(name, random_roll)
+            self.number_of_rolls += 1
             return random_roll
 
     def help(self):
         return  "start - start game\n" \
                "list - list current players\n" \
                "score - list all stored players and their score\n" \
-               "winnings - list personal score"
+               "winnings - list personal score\n" \
+                "gift <n> <username> - gift $n to user"
 
     def reset(self):
         for player_name, bet_amount in self.current_players.items():
@@ -85,12 +103,13 @@ class GambleGame:
             response = self.winning_player_name + " won $" + str(pot) + " with highest roll of " + str(self.winning_score)
             self.players[self.winning_player_name].amount += pot
         else:
-            response = "No rolls, game is voided and bets returned"
+            response = "Not enough players, game reset"
             self.reset()
         self.winning_score = 0
         self.winning_player_name = None
         self.current_players = {}
         self.running = False
+        self.number_of_rolls = 0
         return response
 
 

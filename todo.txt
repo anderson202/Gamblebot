@@ -4,9 +4,4 @@
 2. Additional Features
     - Raise bet feature
     - Bank feature
-    - Give Money to other player
     - Make gamblebot.py more modular
-    
-    - end the game if <2 people bet
-    - add money so no user will end up in dead state
-    - end roll phase when everyone has rolled

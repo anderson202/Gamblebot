@@ -20,7 +20,7 @@ class GambleBot:
     # counts down a specified duration and then changes state of the game
     def count_down(self, duration, next_state, handler, channel):
         start_time = time.time()
-        while(True):
+        while(self.game.number_of_rolls < len(self.game.current_players)):
             current_count = time.time() - start_time
             if duration < current_count:
                 self.game.state = next_state
@@ -37,9 +37,12 @@ class GambleBot:
 
     # handle rolling phase
     def handle_rolling(self, channel):
-        self.post("30 seconds to roll!", channel)
-        p = threading.Thread(target=self.count_down, args=(self.timeout, GameState.IDLE, self.handle_end, channel))
-        p.start()
+        if len(self.game.players) < 2:
+            self.handle_end(channel)
+        else:
+            self.post("30 seconds to roll!", channel)
+            p = threading.Thread(target=self.count_down, args=(self.timeout, GameState.IDLE, self.handle_end, channel))
+            p.start()
 
     # end the game and post response
     def handle_end(self, channel):
@@ -55,20 +58,13 @@ class GambleBot:
                     response = "Please specify bet amount"
                 else:
                     bet_amount = int(msg.split()[2])
-                    response = self.game.start(bet_amount)
+                    response = self.game.start(bet_amount, username)
                     if response == "":
                         self.handle_betting(username, bet_amount, channel)
 
             elif gamble_command == "bet" and self.game.state == GameState.BETTING:
                 try:
-                    self.game.add_player(username)
-                    bet = self.game.players[username].bet(self.game.bet_amount)
-                    if type(bet) is str:
-                        response = username + " you do not have enough money to place that bet"
-                        self.game.remove_player(username)
-                    else:
-                        self.game.current_players[username] = bet
-                        response = username + " placed a bet of $" + str(self.game.bet_amount)
+                    response = self.game.place_bet(username)
                 except:
                     response = "bet amount is not correct"
 
@@ -88,6 +84,23 @@ class GambleBot:
 
             elif gamble_command == "winnings":
                 response = self.game.list_winning(username)
+
+            elif gamble_command == "gift":
+                if len(msg.split()) > 3:
+                    gift_amount = msg.split()[2]
+                    player_to_gift = self.game.players.get(msg.split()[3])
+                    if player_to_gift == None:
+                        response = msg.split()[3] + " is not a user in the game"
+                    else:
+                        try:
+                            if self.game.players.get(username) == None:
+                                response = username + " is not a user in the game"
+                            else:
+                                self.game.players[username].gift(int(gift_amount), player_to_gift)
+                                response = username + " gifted " + gift_amount + " to " + player_to_gift.name
+
+                        except:
+                            response = gift_amount + " is not a proper value"
         else:
             response="Use 'start <bet value>' to start the game"
 
