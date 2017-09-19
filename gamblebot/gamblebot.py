@@ -45,7 +45,7 @@ class GambleBot:
 
     # handle rolling phase
     def handle_rolling(self, channel):
-        if len(self.game.players) < 2:
+        if len(self.game.current_players) < 2:
             self.handle_end(channel)
         else:
             self.post("30 seconds to roll!", channel)
@@ -111,7 +111,7 @@ class GambleBot:
                                 response = username + " is not a user in the game"
                             else:
                                 self.game.players[username].gift(float(gift_amount), player_to_gift)
-                                response = username + " gifted " + "$%.2f".format(float(gift_amount)) + " to " + player_to_gift.name
+                                response = username + " gifted $" + "%.2f".format(float(gift_amount)) + " to " + player_to_gift.name
 
                         except:
                             response = gift_amount + " is not a proper value"
