@@ -14,26 +14,34 @@ class GambleBot:
         self.AT_BOT = "<@" + bot_id + ">"
         self.game = GambleGame()
         self.slack_client = SlackClient(api_token)
-        self.timeout = 30
+        self.timeout = 5
         self.handler_process = []
+        self.current_thread = None
+
 
     # counts down a specified duration and then changes state of the game
     def count_down(self, duration, next_state, handler, channel):
         start_time = time.time()
-        while(self.game.number_of_rolls < len(self.game.current_players)):
-            current_count = time.time() - start_time
-            if duration < current_count:
-                self.game.state = next_state
+        while(True):
+            if self.game.number_of_rolls < len(self.game.current_players):
+                current_count = time.time() - start_time
+                if duration < current_count:
+                    self.game.state = next_state
+                    break
+            else:
+                # allow 1.5 seconds buffer between moving to next handler and last person rolling
+                time.sleep(1.5)
                 break
+
         if handler != None:
             handler(channel)
 
     # handle betting phase while allowing users to continue to call commands
     def handle_betting(self, username, bet_amount, channel):
-        self.post(username + " has started a game. Amount to join is $" + str(bet_amount) +
+        self.post(username + " has started a game. Amount to join is $" + "%.2f" % (bet_amount) +
                                   ".\n 30 seconds to bet, type 'bet' to place bet", channel)
-        p = threading.Thread(target=self.count_down, args=(self.timeout, GameState.ROLLING, self.handle_rolling, channel))
-        p.start()
+        self.current_thread = threading.Thread(target=self.count_down, args=(self.timeout, GameState.ROLLING, self.handle_rolling, channel))
+        self.current_thread.start()
 
     # handle rolling phase
     def handle_rolling(self, channel):
@@ -41,8 +49,8 @@ class GambleBot:
             self.handle_end(channel)
         else:
             self.post("30 seconds to roll!", channel)
-            p = threading.Thread(target=self.count_down, args=(self.timeout, GameState.IDLE, self.handle_end, channel))
-            p.start()
+            self.current_thread = threading.Thread(target=self.count_down, args=(self.timeout, GameState.IDLE, self.handle_end, channel))
+            self.current_thread.start()
 
     # end the game and post response
     def handle_end(self, channel):
@@ -57,10 +65,13 @@ class GambleBot:
                 if len(msg.split()) != 3:
                     response = "Please specify bet amount"
                 else:
-                    bet_amount = int(msg.split()[2])
-                    response = self.game.start(bet_amount, username)
-                    if response == "":
-                        self.handle_betting(username, bet_amount, channel)
+                    try:
+                        bet_amount = round(float(msg.split()[2]), 2)
+                        response = self.game.start(bet_amount, username)
+                        if response == "":
+                            self.handle_betting(username, bet_amount, channel)
+                    except:
+                        response = "Incorrect bet value (must be real number)"
 
             elif gamble_command == "bet" and self.game.state == GameState.BETTING:
                 try:
@@ -68,10 +79,13 @@ class GambleBot:
                 except:
                     response = "bet amount is not correct"
 
-            elif gamble_command == "roll" and self.game.state == GameState.ROLLING:
-                response = self.game.roll(username)
-                if type(response) == int:
-                    response = username + " rolled " + str(response)
+            elif gamble_command == "roll":
+                if self.game.state == GameState.ROLLING:
+                    response = self.game.roll(username)
+                    if type(response) == int:
+                        response = username + " rolled " + str(response)
+                else:
+                    response = "Not in rolling phase"
 
             elif gamble_command == "list":
                 response = self.game.list_players()
@@ -96,8 +110,8 @@ class GambleBot:
                             if self.game.players.get(username) == None:
                                 response = username + " is not a user in the game"
                             else:
-                                self.game.players[username].gift(int(gift_amount), player_to_gift)
-                                response = username + " gifted " + gift_amount + " to " + player_to_gift.name
+                                self.game.players[username].gift(float(gift_amount), player_to_gift)
+                                response = username + " gifted " + "$%.2f".format(float(gift_amount)) + " to " + player_to_gift.name
 
                         except:
                             response = gift_amount + " is not a proper value"
@@ -105,6 +119,7 @@ class GambleBot:
             response="Use 'start <bet value>' to start the game"
 
         self.post(response, channel)
+
 
     def post(self, response, channel):
         self.slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)

@@ -1,7 +1,10 @@
 1. Refactor/Update design
     - make sure all logic follow same structure (MVC)
+        - move gifting logic into game?
         - ie either put all response logic in game model or in controller
+
 2. Additional Features
     - Raise bet feature
     - Bank feature
     - Make gamblebot.py more modular
+
