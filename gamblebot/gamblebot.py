@@ -14,25 +14,26 @@ class GambleBot:
         self.AT_BOT = "<@" + bot_id + ">"
         self.game = GambleGame()
         self.slack_client = SlackClient(api_token)
-        self.timeout = 5
+        self.timeout = 30
         self.handler_process = []
         self.current_thread = None
 
-
     # counts down a specified duration and then changes state of the game
     def count_down(self, duration, next_state, handler, channel):
+        # flag to post at 5 seconds
+        posted_warning = False
         start_time = time.time()
         while(True):
-            if self.game.number_of_rolls < len(self.game.current_players):
-                current_count = time.time() - start_time
-                if duration < current_count:
-                    self.game.state = next_state
-                    break
-            else:
-                # allow 1.5 seconds buffer between moving to next handler and last person rolling
-                time.sleep(1.5)
+            if self.game.state == GameState.ROLLING and len(self.game.current_players) == 0:
                 break
-
+            current_count = time.time() - start_time
+            if duration < current_count:
+                self.game.state = next_state
+                break
+            if current_count > 25 and not posted_warning:
+                self.post("5 seconds remaining!", channel)
+                posted_warning = True
+        time.sleep(1.5)
         if handler != None:
             handler(channel)
 
@@ -45,6 +46,7 @@ class GambleBot:
 
     # handle rolling phase
     def handle_rolling(self, channel):
+        self.game.pot = sum(bet for bet in self.game.current_players.values())
         if len(self.game.current_players) < 2:
             self.handle_end(channel)
         else:
@@ -58,6 +60,9 @@ class GambleBot:
         self.post(response, channel)
 
     def handle_command(self, username, msg, channel):
+        # add user to list of users if they use any command
+        if self.game.players.get(username) == None:
+            self.game.add_player(username)
         response = ""
         if len(msg.split()) > 1:
             gamble_command = msg.split()[1]
@@ -71,7 +76,7 @@ class GambleBot:
                         if response == "":
                             self.handle_betting(username, bet_amount, channel)
                     except:
-                        response = "Incorrect bet value (must be real number)"
+                        response = "Incorrect bet value (must be a positive real number)"
 
             elif gamble_command == "bet" and self.game.state == GameState.BETTING:
                 try:
@@ -80,12 +85,7 @@ class GambleBot:
                     response = "bet amount is not correct"
 
             elif gamble_command == "roll":
-                if self.game.state == GameState.ROLLING:
-                    response = self.game.roll(username)
-                    if type(response) == int:
-                        response = username + " rolled " + str(response)
-                else:
-                    response = "Not in rolling phase"
+                response = self.game.roll(username)
 
             elif gamble_command == "list":
                 response = self.game.list_players()
@@ -102,23 +102,13 @@ class GambleBot:
             elif gamble_command == "gift":
                 if len(msg.split()) > 3:
                     gift_amount = msg.split()[2]
-                    player_to_gift = self.game.players.get(msg.split()[3])
-                    if player_to_gift == None:
-                        response = msg.split()[3] + " is not a user in the game"
-                    else:
-                        try:
-                            if self.game.players.get(username) == None:
-                                response = username + " is not a user in the game"
-                            else:
-                                self.game.players[username].gift(float(gift_amount), player_to_gift)
-                                response = username + " gifted $" + "%.2f".format(float(gift_amount)) + " to " + player_to_gift.name
-
-                        except:
-                            response = gift_amount + " is not a proper value"
+                    player_to_gift = msg.split()[3]
+                    response = self.game.gift(username, player_to_gift, gift_amount)
         else:
             response="Use 'start <bet value>' to start the game"
 
-        self.post(response, channel)
+        if response != "":
+            self.post(response, channel)
 
 
     def post(self, response, channel):

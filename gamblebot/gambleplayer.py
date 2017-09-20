@@ -20,8 +20,9 @@ class Player:
         if self.amount >= amount:
             player.amount += amount
             self.amount -= amount
+            return amount
         else:
-            return "Not enough money"
+            return 0
 
     def __str__(self):
         return self.name
