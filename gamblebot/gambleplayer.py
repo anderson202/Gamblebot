@@ -2,16 +2,16 @@ import random
 
 class Player:
 
-    def __init__(self, name):
+    def __init__(self, name, amount=100):
         self.name = name
-        self.amount = 100
+        self.amount = amount
 
     def roll(self):
         return random.randint(1, 100)
 
     def bet(self, bet_amount):
         if bet_amount > self.amount:
-            return "Not enough money"
+            return 0
         else:
             self.amount -= bet_amount
             return bet_amount

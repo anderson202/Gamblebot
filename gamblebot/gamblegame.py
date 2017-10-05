@@ -1,12 +1,12 @@
-import random
-import time
-from threading import Timer
 from gambleplayer import Player
 from gamblestate import GameState
+from playerdao import PlayerDao
+import signal
 
 class GambleGame:
 
     def __init__(self):
+        self.player_dao = PlayerDao()
         self.running = False
         self.winning_player_name = None
         # current highest roll
@@ -14,36 +14,41 @@ class GambleGame:
         # current players in live game with their bet amount
         self.current_players = {}
         # player name to player object mapping
-        self.players = {}
+        self.players = self.player_dao.fetch_players()
         # game state used during betting/rolling phases
         self.state = GameState.IDLE
         # bet amount for current game
         self.bet_amount = None
         self.pot = 0
 
+
     def start(self, amount, username):
+        try:
+            amount = round(float(amount), 2)
+        except:
+            return "Incorrect bet value (must be a positive real number)"
+
         if self.running:
             return "game is already running"
         if amount <= 0:
             return "bet amount must be greater than 0"
         if amount > self.players[username].amount:
-            return "Cannot bet more than what you have"
+            return "Cannot start game with more than what you have"
         self.running = True
         self.bet_amount = amount
         self.state = GameState.BETTING
         self.place_bet(username)
 
-        return ""
+        return
 
     def gift(self, send_player, receive_player, amount):
         try:
             if float(amount) <= 0:
                 return "Please enter a positive real value"
             if (self.players.get(send_player) == None) or (self.players.get(receive_player) == None):
-                return "Cannot gift as one or more username is not registere("
-            if float(amount) <= 0:
-                return "Gift amount must be greater than 0"
+                return "Cannot gift as one or more username is not registered"
             if self.players[send_player].gift(float(amount), self.players[receive_player]):
+                self.player_dao.update_players(self.players)
                 return send_player + " gifted $" + "%.2f" % (float(amount)) + " to " + receive_player
             else:
                 return send_player + " do not have enough money to gift"
@@ -51,13 +56,17 @@ class GambleGame:
         except:
             return amount + " is not a proper real value"
 
+    def add(self, username, amount):
+        if self.players.get(username) != None:
+            self.players[username].amount += amount
+
     # places a bet and adds user to list of users in live game
     def place_bet(self, username):
         if self.current_players.get(username) != None:
             return username + " already placed a bet"
         bet = self.players[username].bet(self.bet_amount)
-        if type(bet) is str:
-            return username + " you do not have enough money to place that bet"
+        if not bet:
+            return username + " you only have $" + str(self.players[username].amount)
         else:
             self.current_players[username] = bet
             return username + " placed a bet of $" + "%.2f" % (self.bet_amount)
@@ -132,6 +141,7 @@ class GambleGame:
             else:
                 response = "Not enough players, game resetting..."
             self.reset()
+        self.player_dao.update_players(self.players)
         self.winning_score = 0
         self.winning_player_name = None
         self.current_players = {}
