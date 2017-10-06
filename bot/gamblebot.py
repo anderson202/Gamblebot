@@ -20,7 +20,7 @@ class GambleBot:
         self.current_thread = None
         self.user_timeout = {}
         # timeout before user is allowed to type another command
-        self.timeout = 2
+        self.limit = 2
 
     # counts down a specified duration and then changes state of the game
     def count_down(self, duration, next_state, handler, channel):
@@ -136,7 +136,7 @@ class GambleBot:
             while True:
                 username, msg, channel = self.parse_slack_output(self.slack_client.rtm_read())
                 if msg and channel:
-                    if self.user_timeout.get(username) == None or time.time() - self.user_timeout[username] > self.timeout:
+                    if self.user_timeout.get(username) == None or time.time() - self.user_timeout[username] > self.limit:
                         self.handle_command(username, msg, channel)
         else:
             print("Connection failed.")
