@@ -1,12 +1,9 @@
-import sys
 import time
-import multiprocessing
 import threading
-from threading import Timer
 from os import environ
 from slackclient import SlackClient
-from gamblegame import GambleGame
-from gamblestate import GameState
+from .gamblegame import GambleGame
+from .gamblestate import GameState
 
 class GambleBot:
 

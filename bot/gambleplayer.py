@@ -10,14 +10,14 @@ class Player:
         return random.randint(1, 100)
 
     def bet(self, bet_amount):
-        if bet_amount > self.amount:
+        if bet_amount > self.amount or bet_amount < 0:
             return 0
         else:
             self.amount -= bet_amount
             return bet_amount
 
     def gift(self, amount, player):
-        if self.amount >= amount:
+        if self.amount >= amount and amount > 0:
             player.amount += amount
             self.amount -= amount
             return amount

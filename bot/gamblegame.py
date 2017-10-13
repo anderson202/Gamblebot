@@ -1,7 +1,6 @@
-from gambleplayer import Player
-from gamblestate import GameState
-from playerdao import PlayerDao
-import signal
+from .gambleplayer import Player
+from .gamblestate import GameState
+from .playerdao import PlayerDao
 
 class GambleGame:
 
@@ -56,6 +55,7 @@ class GambleGame:
         except:
             return amount + " is not a proper real value"
 
+    # add extra money to user (CHEAT)
     def add(self, username, amount):
         if self.players.get(username) != None:
             self.players[username].amount += amount
